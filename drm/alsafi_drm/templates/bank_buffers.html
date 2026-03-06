@@ -1,0 +1,23 @@
+<style>.bg-negative { background-color: #ffc0cb !important; }</style>
+<table class="table table-striped table-hover table-sm" style="width: 70%;">
+    <thead class="table-dark">
+        <tr>
+            <th>Bank</th>
+            <th>Corr. accounts total in USD</th>
+            <th>Max Limit (KZT)</th>
+            <th>Max Limit (USD)</th>
+            <th>Buffer</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in bank_buffers %}
+        <tr class="{% if row.isTotal %}table-dark fw-bold{% endif %}">
+            <td>{{ row.bank }}</td>
+            <td class="text-end">{{ row.corrAccountsTotalInUsd|default:""|floatformat:"2g" }}</td>
+            <td class="text-end">{{ row.maxLimitKzt|default:""|floatformat:"2g"|default:"—" }}</td>
+            <td class="text-end">{{ row.maxLimitUsd|default:""|floatformat:"2g"|default:"—" }}</td>
+            <td class="text-end{% if row.buffer and row.buffer < 0 %} bg-negative{% endif %}">{{ row.buffer|default:"—"|floatformat:"2g" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

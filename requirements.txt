@@ -1,0 +1,12 @@
+# PDF и RAG для QA по документам
+python-dotenv>=1.0.0
+
+# LDAP/AD для получения username из сессий (NTLM требует MD4)
+ldap3>=2.9.0
+pycryptodome>=3.19.0
+pypdf>=4.0.0
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-openai>=0.2.0
+chromadb>=0.4.0
+sentence-transformers>=2.2.0

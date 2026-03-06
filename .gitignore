@@ -1,0 +1,15 @@
+nano .gitignore
+```
+
+Добавь туда:
+```
+venv/
+__pycache__/
+*.pyc
+*.csv
+*.parquet
+*.db
+db.sqlite3
+.env
+media/
+staticfiles/
