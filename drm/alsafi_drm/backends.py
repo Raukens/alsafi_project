@@ -1,6 +1,7 @@
 """
 Бэкенд аутентификации по LDAP/AD через services.ldap.verify_user.
 """
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 
@@ -11,6 +12,15 @@ class LDAPBackend(ModelBackend):
     """Проверка логина/пароля через LDAP; создание/обновление User по данным AD."""
 
     def authenticate(self, request, username=None, password=None, **kwargs):
+        # Для разработки дома: при DEBUG не проверять пароль, принять любой логин
+        if getattr(settings, "DEBUG", False):
+            login = (username or getattr(settings, "SSO_DEV_USER", None) or "dev").strip()
+            user, _ = User.objects.get_or_create(
+                username=login,
+                defaults={"first_name": login, "email": f"{login}@local.dev"},
+            )
+            return user
+
         if not username or not password:
             return None
         try:

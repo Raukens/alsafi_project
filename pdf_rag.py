@@ -13,7 +13,8 @@ load_dotenv()  # Загружает OPENAI_API_KEY из .env
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
+# from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.prompts import PromptTemplate
 from langchain_classic.chains import RetrievalQA
@@ -97,11 +98,13 @@ def ingest_pdf(pdf_path: str, collection_name: str = "pdf_docs"):
     print(f"Индекс сохранён в {CHROMA_PATH}")
 
 
-def ask(question: str, collection_name: str = "pdf_docs", model: str = "gpt-4o-mini"):
-    """Ответ на вопрос по документу через RAG."""
+def ask_return(question: str, collection_name: str = "pdf_docs", model: str = "gpt-4o-mini"):
+    """
+    Ответ на вопрос по документу через RAG. Возвращает dict для API (Django и др.).
+    Ключи: result (str), source_documents (list).
+    """
     if not CHROMA_PATH.exists():
-        print("Сначала выполните индексацию: python pdf_rag.py ingest <путь_к_pdf>")
-        return
+        return {"result": "Индекс документов не найден. Сначала выполните индексацию: python pdf_rag.py ingest <путь_к_pdf>", "source_documents": []}
 
     embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL)
     vectorstore = Chroma(
@@ -109,18 +112,19 @@ def ask(question: str, collection_name: str = "pdf_docs", model: str = "gpt-4o-m
         embedding_function=embeddings,
         collection_name=collection_name,
     )
-
     llm = ChatOpenAI(model=model, temperature=0, api_key=os.environ.get("OPENAI_API_KEY"))
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
         retriever=vectorstore.as_retriever(search_kwargs={"k": 8}),
         return_source_documents=True,
-        chain_type_kwargs={
-            "prompt": _make_qa_prompt(),
-        },
+        chain_type_kwargs={"prompt": _make_qa_prompt()},
     )
+    return qa_chain.invoke({"query": question})
 
-    result = qa_chain.invoke({"query": question})
+
+def ask(question: str, collection_name: str = "pdf_docs", model: str = "gpt-4o-mini"):
+    """Ответ на вопрос по документу через RAG (CLI: печать в консоль)."""
+    result = ask_return(question, collection_name, model)
     print("\n--- Ответ ---\n")
     print(result["result"])
     if result.get("source_documents"):
@@ -164,3 +168,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# ask_return("Какой норматив по капиталу?")

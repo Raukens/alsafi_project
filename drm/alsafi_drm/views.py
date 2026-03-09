@@ -1,22 +1,79 @@
+import json
+import sys
+from pathlib import Path
+
 import requests
+import datetime as dt
+from dotenv import load_dotenv
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.cache import cache
 from django.conf import settings
 from alsafi_drm.utils.corr_accounts import get_corr_accounts
-import json
 
 
-@login_required
+def _get_rag_answer(question: str):
+    """Вызов RAG (pdf_rag.ask_return). Путь к проекту добавляется в sys.path."""
+    base_dir = Path(settings.BASE_DIR)
+    project_root = base_dir.parent
+    # Загружаем .env из drm/ и из корня проекта, чтобы OPENAI_API_KEY был доступен
+    load_dotenv(base_dir / ".env")
+    load_dotenv(project_root / ".env")
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+    try:
+        from pdf_rag import ask_return
+        result = ask_return(question)
+        return result.get("result", ""), result.get("source_documents") or []
+    except Exception as e:
+        return f"Ошибка при запросе к RAG: {e}", []
+
+
+# @login_required
+@ensure_csrf_cookie
+def chat(request):
+    """Страница чата по документу (RAG). Устанавливает CSRF-куку для POST /api/chat/."""
+    return render(request, "chat.html", {"user": request.user})
+
+
+@require_http_methods(["POST"])
+@ensure_csrf_cookie
+def chat_api(request):
+    """API для чата: POST JSON {query} → {answer, sources}."""
+    try:
+        body = json.loads(request.body)
+        query = (body.get("query") or "").strip()
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({"answer": "Неверный JSON.", "sources": []}, status=400)
+    if not query:
+        return JsonResponse({"answer": "Введите вопрос.", "sources": []}, status=400)
+    answer, source_docs = _get_rag_answer(query)
+    sources = []
+    for doc in source_docs[:5]:
+        meta = getattr(doc, "metadata", None) or {}
+        page = meta.get("page", "?")
+        content = (getattr(doc, "page_content", None) or "")[:300]
+        sources.append({"page": page, "snippet": content})
+    return JsonResponse({"answer": answer, "sources": sources})
+
+
+# @login_required
 def home(request):
     data = get_corr_accounts()
     return render(request, "home.html", {"user": request.user})
     # return JsonResponse({"data": data}, json_dumps_params={"ensure_ascii": False})
 
-@login_required
+# @login_required
 def lcr(request):
-    return render(request, "lcr.html", {"user": request.user})
+    today = dt.date.today()
+    data = get_corr_accounts()
+    assets_raw = data["data"]["assets"]
+    assets = [item for item in data["data"]["assets"] if not item.get("isTotal")]
+    total = next((item for item in assets_raw if item.get("isTotal")), None)
+    return render(request, "lcr.html", {"user": request.user, "today": today, "assets": assets, "total": total})
 
 
 def get_assets(request):
