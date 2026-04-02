@@ -27,7 +27,7 @@ urlpatterns = [
     path("lcr/", views.lcr, name="lcr"),
     path("assets/", views.get_assets, name="assets"),
     path("liabilities/", views.get_liabilities, name="liabilities"),
-    path("accounts/login/", auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),
+    path("accounts/login/", views.LDAPLoginView.as_view(template_name="registration/login.html"), name="login"),
     path("accounts/logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("admin/", admin.site.urls),
     path('liquidity/', views.get_liquidity, name='liquidity'),

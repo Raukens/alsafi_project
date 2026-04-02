@@ -10,7 +10,6 @@ from dotenv import dotenv_values
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
-from django.core.exceptions import PermissionDenied
 
 
 logger = logging.getLogger(__name__)
@@ -46,7 +45,10 @@ class LDAPBackend(ModelBackend):
         raw = env_values.get("ALLOWED_LDAP_USERNAMES", "")
         allowed = [u.strip().lower() for u in raw.split(",") if u.strip()]
         if allowed and username.lower() not in allowed:
-            raise PermissionDenied("Доступ запрещён. Обратитесь к администратору.")
+            # Флаг на объекте запроса — LoginView проверит и покажет 403
+            if request is not None:
+                request._ldap_access_denied = True
+            return None
         display_name = (info.get("display_name") or username)[:150]
         email = (info.get("email") or "")[:254]
         user, created = User.objects.get_or_create(

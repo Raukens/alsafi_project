@@ -7,12 +7,24 @@ import datetime as dt
 from dotenv import load_dotenv
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.cache import cache
 from django.conf import settings
 from alsafi_drm.utils.corr_accounts import get_corr_accounts, invalidate_cache
+
+
+class LDAPLoginView(LoginView):
+    """Если LDAP вернул флаг access_denied — показываем 403, иначе — стандартная форма."""
+
+    def post(self, request, *args, **kwargs):
+        request._ldap_access_denied = False
+        response = super().post(request, *args, **kwargs)
+        if getattr(request, '_ldap_access_denied', False):
+            return render(request, '403.html', status=403)
+        return response
 from collections import defaultdict
 
 
