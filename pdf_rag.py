@@ -112,7 +112,13 @@ def ask_return(question: str, collection_name: str = "pdf_docs", model: str = "g
         embedding_function=embeddings,
         collection_name=collection_name,
     )
-    llm = ChatOpenAI(model=model, temperature=0, api_key=os.environ.get("OPENAI_API_KEY"))
+    # llm = ChatOpenAI(model=model, temperature=0, api_key=os.environ.get("OPENAI_API_KEY"))
+    llm = ChatOpenAI(
+    model="meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    temperature=0,
+    api_key=os.environ.get("TOGETHER_API_KEY"),
+    base_url="https://api.together.xyz/v1",
+    )
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
         retriever=vectorstore.as_retriever(search_kwargs={"k": 8}),
