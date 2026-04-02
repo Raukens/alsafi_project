@@ -24,8 +24,8 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'lcr' %}">LCR</a>
             <a class="navbar-brand" href="{% url 'liquidity' %}">Ликвидность</a>
-            <a class="navbar-brand" href="{% url 'lcr' %}">Валютная позиция</a>
             <a class="navbar-brand" href="{% url 'chat' %}">ChatIBBPR</a>
+            {% if user.username == 'r.kumash' %}<a class="navbar-brand" href="{% url 'clear_cache' %}">Clean cache</a>{% endif %}
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>

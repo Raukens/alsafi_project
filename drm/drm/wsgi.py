@@ -8,6 +8,12 @@ https://docs.djangoproject.com/en/6.0/howto/deployment/wsgi/
 """
 
 import os
+import sys
+
+# Добавляем корень проекта в sys.path для импорта services (так же как в manage.py)
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
 from django.core.wsgi import get_wsgi_application
 

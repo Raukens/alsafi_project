@@ -1,8 +1,97 @@
 {% extends "base.html" %}
-
 {% block title %}LCR{% endblock %}
 
+{% block extra_css %}
+<style>
+    .lcr-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 2.5rem;
+        gap: 1.2rem;
+    }
+    .lcr-date {
+        font-size: 1rem;
+        color: #6c757d;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-weight: 500;
+    }
+    .lcr-label {
+        font-size: 0.85rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #aaa;
+        margin-bottom: -0.5rem;
+        font-weight: 600;
+    }
+    .lcr-circle {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        transition: background 0.4s;
+    }
+    .lcr-circle .lcr-value {
+        font-size: 2.6rem;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1;
+        letter-spacing: -1px;
+    }
+    .lcr-circle .lcr-unit {
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.75);
+        margin-top: 0.3rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .lcr-red    { background: linear-gradient(135deg, #e53935, #c62828); }
+    .lcr-yellow { background: linear-gradient(135deg, #f9a825, #f57f17); }
+    .lcr-green  { background: linear-gradient(135deg, #43a047, #1b5e20); }
+    .lcr-hint {
+        font-size: 0.82rem;
+        color: #888;
+        margin-top: 0.4rem;
+    }
+    .lcr-recommendation {
+        max-width: 480px;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #444;
+        background: #f8f9fa;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid #e0e0e0;
+        margin-top: 0.5rem;
+        line-height: 1.5;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<p>Значение LCR на.</p>
-<h1>1,25</h1>
+<div class="lcr-wrapper">
+    <div class="lcr-date">Значение LCR на {{ today }}</div>
+    <div class="lcr-circle
+        {% if lcr_raw < 1.2 %}lcr-red
+        {% elif lcr_raw < 1.5 %}lcr-yellow
+        {% else %}lcr-green{% endif %}">
+        <span class="lcr-value">{{ lcr }}</span>
+        <span class="lcr-unit">коэффициент</span>
+    </div>
+    <div class="lcr-hint">
+        {% if lcr_raw < 1.2 %}Ниже нормы (менее 1,20)
+        {% elif lcr_raw < 1.5 %}Умеренный уровень (1,20 — 1,50)
+        {% else %}Высокий уровень (более 1,50){% endif %}
+    </div>
+    {% if recomendation %}
+    <div class="lcr-recommendation">
+        <i class="bi {% if lcr_raw < 1.2 %}bi-exclamation-triangle-fill text-danger{% else %}bi-check-circle-fill text-success{% endif %} me-2"></i>{{ recomendation }}
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

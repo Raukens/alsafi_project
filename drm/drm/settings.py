@@ -136,7 +136,7 @@ ALLOWED_LDAP_USERNAMES = [u.strip() for u in ALLOWED_LDAP_USERNAMES if u.strip()
 SSO_DEV_USER = os.environ.get("SSO_DEV_USER", "")  # например SSO_DEV_USER=r.kumash
 
 # Вход по форме: проверка логина/пароля через services.ldap.verify_user
-AUTHENTICATION_BACKENDS = ["alsafi_drm.backends.LDAPBackend", "django.contrib.auth.backends.ModelBackend"]
+AUTHENTICATION_BACKENDS = ["alsafi_drm.backends.LDAPBackend"]
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/accounts/login/"
@@ -152,4 +152,19 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
         "LOCATION": BASE_DIR / "cache",
     }
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "loggers": {
+        "alsafi_drm.backends": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+    },
 }

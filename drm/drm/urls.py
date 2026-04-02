@@ -20,7 +20,8 @@ from django.contrib.auth import views as auth_views
 from alsafi_drm import views
 
 urlpatterns = [
-    path("", views.chat, name="chat"),
+    path("", views.home, name="home"),
+    path("chat/", views.chat, name="chat"),
     path("dashboard/", views.home, name="home"),
     path("api/chat/", views.chat_api),
     path("lcr/", views.lcr, name="lcr"),
@@ -33,4 +34,5 @@ urlpatterns = [
     path('liquidity/assets/', views.tab_assets, name='tab_assets'),
     path('liquidity/liabilities/', views.tab_liabilities, name='tab_liabilities'),
     path('liquidity/bank_buffers/', views.get_bank_buffers, name='tab_bank_buffers'),
+    path('clear-cache/', views.clear_cache, name='clear_cache'),
 ]

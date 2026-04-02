@@ -166,7 +166,7 @@ def main():
         ask(args.question, args.collection, args.model)
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
-# ask_return("Какой норматив по капиталу?")
+ask_return("Какой норматив по капиталу?")

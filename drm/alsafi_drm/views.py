@@ -5,14 +5,21 @@ from pathlib import Path
 import requests
 import datetime as dt
 from dotenv import load_dotenv
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.cache import cache
 from django.conf import settings
-from alsafi_drm.utils.corr_accounts import get_corr_accounts
+from alsafi_drm.utils.corr_accounts import get_corr_accounts, invalidate_cache
+from collections import defaultdict
+
+
+
+def clear_cache(request):
+    invalidate_cache()
+    return redirect('home')
 
 
 def _get_rag_answer(question: str):
@@ -32,7 +39,7 @@ def _get_rag_answer(question: str):
         return f"Ошибка при запросе к RAG: {e}", []
 
 
-# @login_required
+@login_required
 @ensure_csrf_cookie
 def chat(request):
     """Страница чата по документу (RAG). Устанавливает CSRF-куку для POST /api/chat/."""
@@ -60,20 +67,54 @@ def chat_api(request):
     return JsonResponse({"answer": answer, "sources": sources})
 
 
-# @login_required
+@login_required
 def home(request):
     data = get_corr_accounts()
     return render(request, "home.html", {"user": request.user})
     # return JsonResponse({"data": data}, json_dumps_params={"ensure_ascii": False})
 
-# @login_required
+@login_required
 def lcr(request):
+    hqla_banks = [
+        'BANK OF LANGFANG CO LTD',
+        'COMMERCIAL BANK OF DUBAI',
+        'MASHREQBANK PSC',
+        'ZHEJIANG CHOUZHOU COMMERCIAL BANK CO.,LTD',
+        'Акционерное общество ADCB Islamic Bank JSC',
+    ]
     today = dt.date.today()
     data = get_corr_accounts()
     assets_raw = data["data"]["assets"]
-    assets = [item for item in data["data"]["assets"] if not item.get("isTotal")]
-    total = next((item for item in assets_raw if item.get("isTotal")), None)
-    return render(request, "lcr.html", {"user": request.user, "today": today, "assets": assets, "total": total})
+    hqla_assets_inUsd = sum(
+        float(item.get("inUsd") or 0)
+        for item in assets_raw
+        if not item.get("isTotal") and item.get("bank").replace('\xa0', ' ').strip() in hqla_banks
+        )
+    total_assets_inUsd = sum(float(item.get("inUsd") or 0) for item in assets_raw if not item.get("isTotal"))
+    liabilities_raw = data["data"]["liabilities"]
+    total_liabilities_inUsd = sum(float(item.get("inUsd") or 0) for item in liabilities_raw if not item.get("isTotal"))
+    print(f'hqla_assets_inUsd: {hqla_assets_inUsd}, total_assets_inUsd: {total_assets_inUsd}, total_liabilities_inUsd: {total_liabilities_inUsd}')
+    grouped_banks = defaultdict(float)
+    for item in assets_raw:
+        if not item.get("isTotal"):
+            grouped_banks[item.get("bank")] += float(item.get("inUsd") or 0)
+
+    lcr = hqla_assets_inUsd / (total_liabilities_inUsd * 0.4)
+    print(f'lcr: {lcr}')
+    print(grouped_banks)
+    if lcr < 1.2:
+
+        banks_to_increase_liquidity = [bank for bank, amount in grouped_banks.items() if amount > 0.05 * total_assets_inUsd and bank not in hqla_banks]
+        recomendation = f"Необходимо снизить остатки в следующих банках: {', '.join(banks_to_increase_liquidity)}"
+    else:
+        recomendation = "LCR имеет хорошее значение"
+    return render(request, "lcr.html", {
+        "user": request.user,
+        "today": today.strftime("%d.%m.%Y"),
+        "lcr": round(lcr, 2),
+        "lcr_raw": lcr,
+        "recomendation": recomendation,
+    })
 
 
 def get_assets(request):
