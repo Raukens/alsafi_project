@@ -14,7 +14,17 @@ from django.core.cache import cache
 from django.conf import settings
 from alsafi_drm.utils.corr_accounts import get_corr_accounts, invalidate_cache
 from collections import defaultdict
+from django.contrib.auth.views import LoginView
+from django.core.exceptions import PermissionDenied
 
+
+class CustomLoginView(LoginView):
+    template_name = "registration/login.html"
+    
+    def form_invalid(self, form):
+        if getattr(self.request, 'ldap_access_denied', False):
+            raise PermissionDenied
+        return super().form_invalid(form)
 
 
 def clear_cache(request):

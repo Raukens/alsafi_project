@@ -46,7 +46,9 @@ class LDAPBackend(ModelBackend):
         raw = env_values.get("ALLOWED_LDAP_USERNAMES", "")
         allowed = [u.strip().lower() for u in raw.split(",") if u.strip()]
         if allowed and username.lower() not in allowed:
-            raise PermissionDenied("Доступ запрещён. Обратитесь к администратору.")
+            if request:
+                request.ldap_access_denied = True
+            return None
         display_name = (info.get("display_name") or username)[:150]
         email = (info.get("email") or "")[:254]
         user, created = User.objects.get_or_create(
