@@ -2,6 +2,8 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from dotenv import load_dotenv
+load_dotenv()
 
 # Добавляем корень проекта (родитель drm/) в sys.path для импорта services
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
