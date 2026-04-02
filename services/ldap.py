@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from ldap3 import Server, Connection, SUBTREE, NTLM, ALL
+from ldap3 import Server, Connection, SUBTREE, NTLM, NONE
 from dotenv import load_dotenv
 
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -28,10 +28,10 @@ def get_user_info(username: str) -> Optional[dict]:
     """
     if not username or not LDAP_BIND_USER or not LDAP_BIND_PASSWORD:
         return None
-    server = Server(LDAP_SERVER, get_info=ALL)
+    server = Server(LDAP_SERVER, get_info=NONE, connect_timeout=5)
     conn = Connection(
         server, user=LDAP_BIND_USER, password=LDAP_BIND_PASSWORD,
-        authentication=NTLM, auto_bind=True
+        authentication=NTLM, auto_bind=True, receive_timeout=10
     )
     try:
         conn.search(
@@ -63,11 +63,11 @@ def verify_user(username: str, password: str) -> Optional[dict]:
     if not username or not password:
         return None
     user_dn = f"{LDAP_DOMAIN}\\{username}"
-    server = Server(LDAP_SERVER, get_info=ALL)
+    server = Server(LDAP_SERVER, get_info=NONE, connect_timeout=5)
     try:
         conn = Connection(
             server, user=user_dn, password=password,
-            auto_bind=True, authentication=NTLM
+            auto_bind=True, authentication=NTLM, receive_timeout=10
         )
     except Exception:
         return None
