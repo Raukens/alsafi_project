@@ -3,9 +3,9 @@
 """
 import logging
 import os
+import re
 import sys
 from pathlib import Path
-from dotenv import dotenv_values
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -39,11 +39,19 @@ class LDAPBackend(ModelBackend):
             return None
         username = (info.get("username") or username).strip()
 
-        # Список читается из .env напрямую при каждом входе (без перезапуска сервера)
+        # Читаем ALLOWED_LDAP_USERNAMES напрямую из .env файла (обходим проблему с \ в dotenv)
+        raw = ""
         env_path = Path(settings.BASE_DIR).parent / ".env"
-        env_values = dotenv_values(env_path)
-        raw = env_values.get("ALLOWED_LDAP_USERNAMES", "")
+        try:
+            text = env_path.read_text(encoding="utf-8")
+            match = re.search(r"^ALLOWED_LDAP_USERNAMES\s*=\s*(.+)$", text, re.MULTILINE)
+            if match:
+                raw = match.group(1).strip().strip('"').strip("'")
+        except Exception as e:
+            logger.error("Ошибка чтения .env: %s", e)
+            raw = os.environ.get("ALLOWED_LDAP_USERNAMES", "")
         allowed = [u.strip().lower() for u in raw.split(",") if u.strip()]
+        logger.debug("Разрешённые пользователи: %s, проверяем: %s", allowed, username.lower())
         if allowed and username.lower() not in allowed:
             # Флаг на объекте запроса — LoginView проверит и покажет 403
             if request is not None:
