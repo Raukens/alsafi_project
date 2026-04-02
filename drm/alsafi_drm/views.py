@@ -81,9 +81,7 @@ def chat_api(request):
 
 @login_required
 def home(request):
-    data = get_corr_accounts()
     return render(request, "home.html", {"user": request.user})
-    # return JsonResponse({"data": data}, json_dumps_params={"ensure_ascii": False})
 
 @login_required
 def lcr(request):

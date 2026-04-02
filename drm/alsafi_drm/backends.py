@@ -40,8 +40,9 @@ class LDAPBackend(ModelBackend):
         username = (info.get("username") or username).strip()
 
         # Читаем ALLOWED_LDAP_USERNAMES напрямую из .env файла (обходим проблему с \ в dotenv)
+        # backends.py → alsafi_drm/ → drm/ → alsafi_project/ → .env
         raw = ""
-        env_path = Path(settings.BASE_DIR).parent / ".env"
+        env_path = Path(__file__).resolve().parent.parent.parent / ".env"
         try:
             text = env_path.read_text(encoding="utf-8")
             match = re.search(r"^ALLOWED_LDAP_USERNAMES\s*=\s*(.+)$", text, re.MULTILINE)
