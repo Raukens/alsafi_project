@@ -1,24 +1,23 @@
 """
 WSGI config for drm project.
-
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/6.0/howto/deployment/wsgi/
 """
-from dotenv import load_dotenv
-load_dotenv()
 import os
 import sys
+from pathlib import Path
 
-# wsgi.py: drm/drm/wsgi.py → нужно подняться на 3 уровня → alsafi_project/
-# Это нужно для импорта services.ldap (services/ находится в корне проекта)
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# wsgi.py находится в drm/drm/ — поднимаемся на 3 уровня до alsafi_project/
+_ROOT = str(Path(__file__).resolve().parent.parent.parent)
+_DRM = str(Path(__file__).resolve().parent.parent)
+
+# Добавляем корень проекта в sys.path для импорта services
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from django.core.wsgi import get_wsgi_application
+# Загружаем .env с явным путём до того, как Django инициализируется
+from dotenv import load_dotenv
+load_dotenv(Path(_ROOT) / ".env")
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'drm.settings')
 
+from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
