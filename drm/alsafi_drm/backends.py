@@ -10,6 +10,8 @@ from dotenv import dotenv_values
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
+from django.core.exceptions import PermissionDenied
+
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -44,7 +46,7 @@ class LDAPBackend(ModelBackend):
         raw = env_values.get("ALLOWED_LDAP_USERNAMES", "")
         allowed = [u.strip().lower() for u in raw.split(",") if u.strip()]
         if allowed and username.lower() not in allowed:
-            return None
+            raise PermissionDenied("Доступ запрещён. Обратитесь к администратору.")
         display_name = (info.get("display_name") or username)[:150]
         email = (info.get("email") or "")[:254]
         user, created = User.objects.get_or_create(

@@ -140,7 +140,7 @@ AUTHENTICATION_BACKENDS = ["alsafi_drm.backends.LDAPBackend"]
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/accounts/login/"
-
+TEMPLATES[0]['OPTIONS']['context_processors']  # стандартный Django
 
 today = date.today().strftime("%d.%m.%Y")
 CORR_ACCOUNTS_URL = os.environ.get("CORR_ACCOUNTS_URL", f"https://prod-cbs.alsafibank.com/api/executor-service/reports/data?dateReport={today}&code=ASSETS_LIQUIDITY")
