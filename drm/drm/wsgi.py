@@ -11,8 +11,9 @@ load_dotenv()
 import os
 import sys
 
-# Добавляем корень проекта в sys.path для импорта services (так же как в manage.py)
-_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# wsgi.py: drm/drm/wsgi.py → нужно подняться на 3 уровня → alsafi_project/
+# Это нужно для импорта services.ldap (services/ находится в корне проекта)
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
