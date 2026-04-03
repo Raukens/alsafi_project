@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import sys
+import threading
 from pathlib import Path
 
 from django.conf import settings
@@ -23,24 +24,43 @@ class LDAPBackend(ModelBackend):
         if not username or not password:
             return None
 
-        # Гарантируем, что корень проекта есть в sys.path (нужно при запуске через wsgi/gunicorn)
         project_root = str(Path(settings.BASE_DIR).parent)
         if project_root not in sys.path:
             sys.path.insert(0, project_root)
 
         try:
             from services.ldap import verify_user
-            info = verify_user(username.strip(), password)
+            result = [None]
+            error = [None]
+
+            def _call():
+                try:
+                    result[0] = verify_user(username.strip(), password)
+                except Exception as e:
+                    error[0] = e
+
+            t = threading.Thread(target=_call)
+            t.daemon = True
+            t.start()
+            t.join(timeout=12)
+
+            if t.is_alive():
+                logger.error("LDAP timeout для '%s'", username)
+                return None
+            if error[0]:
+                raise error[0]
+            info = result[0]
+
         except Exception as e:
             logger.error("Ошибка при вызове verify_user для '%s': %s", username, e, exc_info=True)
             return None
+
         if not info:
             logger.warning("verify_user вернул None для пользователя '%s'", username)
             return None
+
         username = (info.get("username") or username).strip()
 
-        # Читаем ALLOWED_LDAP_USERNAMES напрямую из .env файла (обходим проблему с \ в dotenv)
-        # backends.py → alsafi_drm/ → drm/ → alsafi_project/ → .env
         raw = ""
         env_path = Path(__file__).resolve().parent.parent.parent / ".env"
         try:
@@ -51,13 +71,15 @@ class LDAPBackend(ModelBackend):
         except Exception as e:
             logger.error("Ошибка чтения .env: %s", e)
             raw = os.environ.get("ALLOWED_LDAP_USERNAMES", "")
+
         allowed = [u.strip().lower() for u in raw.split(",") if u.strip()]
         logger.debug("Разрешённые пользователи: %s, проверяем: %s", allowed, username.lower())
+
         if allowed and username.lower() not in allowed:
-            # Флаг на объекте запроса — LoginView проверит и покажет 403
             if request is not None:
                 request._ldap_access_denied = True
             return None
+
         display_name = (info.get("display_name") or username)[:150]
         email = (info.get("email") or "")[:254]
         user, created = User.objects.get_or_create(
