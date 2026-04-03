@@ -31,8 +31,11 @@ def get_user_info(username: str) -> Optional[dict]:
     server = Server(LDAP_SERVER, get_info=NONE, connect_timeout=5)
     conn = Connection(
         server, user=LDAP_BIND_USER, password=LDAP_BIND_PASSWORD,
-        authentication=NTLM, auto_bind=True, receive_timeout=10
+        authentication=NTLM, auto_bind=False, receive_timeout=10
     )
+    conn.open()
+    conn.socket.settimeout(10)
+    conn.bind()
     try:
         conn.search(
             search_base=LDAP_BASE_DN,
@@ -67,8 +70,11 @@ def verify_user(username: str, password: str) -> Optional[dict]:
     try:
         conn = Connection(
             server, user=user_dn, password=password,
-            auto_bind=True, authentication=NTLM, receive_timeout=10
+            auto_bind=False, authentication=NTLM, receive_timeout=10
         )
+        conn.open()
+        conn.socket.settimeout(10)
+        conn.bind()
     except Exception:
         return None
     try:
